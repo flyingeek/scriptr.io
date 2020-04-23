@@ -27,7 +27,7 @@ if (api.status != 200) {
         frames.push({"text": "NOW !", "icon": icon});
         frames.push(chartFrame);
     } else if (delay < 0) {
-        frames.push({"text": "+ 1H", "icon": icon});
+        frames.push({"text": "+ 1H", "icon": "i" + icon.substring(1)});
     } else {
         frames.push({"text": (delay * 5).toString(10) + " MN", "icon": icon});
         frames.push(chartFrame);

@@ -1,0 +1,26 @@
+var log = require("log");
+var store = storage.global;
+
+function getCache(requestCallback, name, timeout, timeoutOnError) {
+    var ts = Math.floor((new Date).getTime()/1000);
+    if (name in store) {
+        var cache = store[name];
+        var expiration = cache.timestamp + timeout;
+        if (cache.status != 200) {
+            expiration = cache.timestamp + timeoutOnError;
+        }
+        if (ts < expiration){
+            log.debug("request from cache " + name);
+            cache.isCached = true;
+            return cache;
+        }
+    }
+    var request = requestCallback();
+    store[name] = {
+    	"status": request.status,
+        "timestamp": ts,
+        "body": request.body,
+        "isCached": false
+    };
+    return store[name];
+}

@@ -1,18 +1,23 @@
 var http = require("http");
 var log = require("log");
+var cache = require("/lib/cache");
 log.setLevel("INFO"); //levels are ERROR | WARN | INFO | DEBUG | OFF
 var frames = [];
 
 // Current Weather based on OpenWeather
 var icon = "i73";
-api = http.request({
-    "url" : "http://api.openweathermap.org/data/2.5/weather",
-    "params": {
-        "appid": request.parameters.owkey,
-        "zip": request.parameters.zip || "33600,fr",
-        "units": "metric"
-    }
-});
+var zip = request.parameters.zip || "33600,fr";
+function owRequest () {
+    return http.request({
+    	"url" : "http://api.openweathermap.org/data/2.5/weather",
+    	"params": {
+        	"appid": request.parameters.owkey,
+        	"zip": zip,
+        	"units": "metric"
+   		 }
+	});
+}
+var api = cache.getCache(owRequest, "openweather_" + zip, 900, 300);
 if (api.status != 200) {
     frames.push({"text": "API ERROR", "icon": icon});
 } else {
@@ -70,10 +75,14 @@ if (api.status != 200) {
 // Rain at 1h frames
 var location = request.parameters.location || "333180";
 var icon = "a3361";
-api = http.request({
-  "url": "http://www.meteofrance.com/mf3-rpc-portlet/rest/pluie/" + location,
-  "params": {}
-});
+function meteo1Request() {
+    return http.request({
+  		"url": "http://www.meteofrance.com/mf3-rpc-portlet/rest/pluie/" + location,
+  		"params": {}
+	});
+}
+api = cache.getCache(meteo1Request, "meteo1h_" + location, 300, 300);
+
 if (api.status != 200) {
     frames.push({"text": "ERROR", "icon": icon});
 } else {

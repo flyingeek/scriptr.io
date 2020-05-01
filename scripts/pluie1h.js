@@ -1,13 +1,17 @@
 var http = require("http");
 var log = require("log");
+var cache = require("/lib/cache");
 log.setLevel("INFO"); //levels are ERROR | WARN | INFO | DEBUG | OFF
 var frames = [];
 var icon = "a3361";
 var location = request.parameters.location || "333180";
-api = http.request({
-  "url": "http://www.meteofrance.com/mf3-rpc-portlet/rest/pluie/" + location,
-  "params": {}
-});
+function meteo1Request() {
+  return http.request({
+      "url": "http://www.meteofrance.com/mf3-rpc-portlet/rest/pluie/" + location,
+      "params": {}
+  });
+}
+var api = cache.getCache(meteo1Request, "meteo1h_" + location, 300, 300);
 if (api.status != 200) {
     frames.push({"text": "ERROR", "icon": icon});
 } else {

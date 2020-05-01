@@ -70,12 +70,14 @@ if (res) {
   if(res.PH.Message !== "Bon" && res.PH.Message !== "Parfait"){
     addHiLowFrame(res.PH.Deviation, res.PH.Value, "i10775");
   } else {
-    frames.push({"text": res.PH.Value.toFixed(1), "icon": "i10767"});
+	if (res.PH.Value < 7 || res.PH.Value > 7.2) {
+      frames.push({"text": res.PH.Value.toFixed(1), "icon": "i10767"});
+    }
   }
   if(res.Desinfectant.Message !== "Parfait" && res.Desinfectant.Message !== "Bon"){
     addHiLowFrame(res.Desinfectant.Deviation, res.Desinfectant.Deviation, "i10776");
   } else {
-    frames.push({"text": res.Desinfectant.Message, "icon": "i10777"});
+    // frames.push({"text": res.Desinfectant.Message, "icon": "i10777"});
   }
 }
 

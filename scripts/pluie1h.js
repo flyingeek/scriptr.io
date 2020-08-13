@@ -31,7 +31,6 @@ if (api.status != 200) {
         data5.push(data[8].value);//9 45-50
         data5.push(data[8].value);//10 50-55
         data5.push(data[9].value);//11 55-60
-        data5.push(data[9].value);//12 60-65
         var chartData = data5.map(function(v) {
                 var level = parseInt(v, 10);
                 return (level <= 1) ? 0 : level * 2;

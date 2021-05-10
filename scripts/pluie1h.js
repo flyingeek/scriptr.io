@@ -4,18 +4,18 @@ var cache = require("/lib/cache");
 log.setLevel("DEBUG"); //levels are ERROR | WARN | INFO | DEBUG | OFF
 var frames = [];
 var icon = "a3361";
-var location = (request.parameters.location || "45, -0.6").split(',').map(v => v.trim());
-var lat = location[0];
-var lon = location[1];
+var location = request.parameters.location || "45, -0.6";
+location = location.split(',');
 function meteo1Request() {
     return http.request({
         "url": "https://rpcache-aa.meteofrance.com/internet2018client/2.0/nowcast/rain",
-        "params": {lat, lon, token: request.parameters.mfkey}
+        "params": {'lat': location[0].trim(), 'lon': location[1].trim(), 'token': request.parameters.mfkey}
     });
 }
 var api = cache.getCache(meteo1Request, "meteo1hv2_" + location, 300, 300);
 var api = meteo1Request();
 if (api.status != 200) {
+    console.warn(api);
     frames.push({"text": "ERROR", "icon": icon});
 } else {
     var json = JSON.parse(api.body);
@@ -54,3 +54,4 @@ if (api.status != 200) {
 response.addHeaders(configuration.crossDomainHeaders);
 response.write(JSON.stringify({"frames": frames}));
 response.close();
+

@@ -20,9 +20,7 @@ The script returns JSON compatible with [laMetric].
 
 # pluie1h
 
-Le script utilise le paramètre `location` qui est le code insee avec un zéro ajouté à la fin.
-
-Voir la documentation publiée sur [EasyDomoticz](https://easydomoticz.com/prvision-pluie/) 
+Le script utilise le paramètre `location` qui est la latitude et la longitude (separées par une virgule).
 
 Pour savoir quelles données sont retournées par Météo France, [voir ici](https://github.com/liorzoue/ext-meteo/blob/master/chrome-ext/js/data-sample.json).
 

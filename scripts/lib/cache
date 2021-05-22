@@ -3,8 +3,9 @@ var store = storage.global;
 
 function getCache(requestCallback, name, timeout, timeoutOnError) {
     var ts = Math.floor((new Date).getTime()/1000);
-    if (name in store) {
-        var cache = store[name];
+    var cacheName = name.replace(/[.\s-]/g, '_');
+    if (store[cacheName]) {
+        var cache = store[cacheName];
         var expiration = cache.timestamp + timeout;
         if (cache.status != 200) {
             expiration = cache.timestamp + timeoutOnError;
@@ -16,11 +17,11 @@ function getCache(requestCallback, name, timeout, timeoutOnError) {
         }
     }
     var request = requestCallback();
-    store[name] = {
+    store[cacheName] = {
     	"status": request.status,
         "timestamp": ts,
         "body": request.body,
         "isCached": false
     };
-    return store[name];
+    return store[cacheName];
 }

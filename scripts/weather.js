@@ -1,7 +1,7 @@
 var http = require("http");
 var log = require("log");
 var cache = require("/lib/cache");
-log.setLevel("INFO"); //levels are ERROR | WARN | INFO | DEBUG | OFF
+log.setLevel("DEBUG"); //levels are ERROR | WARN | INFO | DEBUG | OFF
 var frames = [];
 
 // Current Weather based on OpenWeather
@@ -17,7 +17,7 @@ function owRequest () {
    		 }
 	});
 }
-var api = cache.getCache(owRequest, "openweather_" + zip, 900, 300);
+var api = cache.getCache(owRequest, "openweatherv3_" + zip, 900, 300);
 if (api.status != 200) {
     frames.push({"text": "API ERROR", "icon": icon});
 } else {
@@ -77,18 +77,24 @@ var icon = "a3361";
 var location = request.parameters.location || "45, -0.6";
 var locationArray = location.split(',');
 function meteo1Request() {
-    return http.request({
+    resp = http.request({
         "url": "https://rpcache-aa.meteofrance.com/internet2018client/2.0/nowcast/rain",
-        "params": {'lat': locationArray[0].trim(), 'lon': locationArray[1].trim(), 'token': request.parameters.mfkey}
+        "params": {'lat': locationArray[0].trim(), 'lon': locationArray[1].trim(), 'token': request.parameters.mfkey, 'timestamp': (Date.now()).toString()}
     });
+    log.debug('X-Cache-Status:' + resp.headers["X-Cache-Status"]);
+    return {
+        "status": (resp.headers["X-Cache-Status"] === 'EXPIRED') ? 409 : resp.status,
+        "body": resp.body          
+    }
 }
-var api = cache.getCache(meteo1Request, "meteo1hv2_" + location, 120, 60);
+var api = cache.getCache(meteo1Request, "meteo1hv5_" + location, 120, 60);
 if (api.status != 200) {
     log.warn(api);
     frames.push({"text": "ERROR", "icon": icon});
 } else {
     var json = JSON.parse(api.body);
     var data = json["properties"]['forecast'];
+    log.debug(data.map(function(o){return o.rain_intensity}));
     var data5 = [];
     data5.push(data[0].rain_intensity);//0 0-5 5mn
     data5.push(data[1].rain_intensity);//1 5-10 10mn
@@ -102,13 +108,16 @@ if (api.status != 200) {
     data5.push(data[7].rain_intensity);//9 45-50 50mn
     data5.push(data[7].rain_intensity);//10 50-55
     data5.push(data[8].rain_intensity);//11 55-60 60mn
+    log.debug(data5);
     var chartData = data5.map(function (v) {
         var level = parseInt(v, 10);
         return (level <= 1) ? 0 : level * 2;
     });
+    log.debug(chartData);
     var delay = chartData.findIndex(function (v) {
         return v >= 2;
     });
+    log.debug(delay);
     var chartFrame = {"index": 0, "chartData": chartData};
     if (delay === 0) {
         frames.push({"text": "NOW !", "icon": icon});

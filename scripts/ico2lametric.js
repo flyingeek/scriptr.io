@@ -7,35 +7,96 @@ var frames =[];
 var defaultIcon = "i10765";
 var poolID = request.parameters.poolID || "";
 var res = "";
+function getAllUrlParams(url) {
 
+  // get query string from url (optional) or window
+  var queryString = url ? url.split('?')[1] : window.location.search.slice(1);
+
+  // we'll store the parameters here
+  var obj = {};
+
+  // if query string exists
+  if (queryString) {
+
+    // stuff after # is not part of query string, so get rid of it
+    queryString = queryString.split('#')[0];
+
+    // split our query string into its component parts
+    var arr = queryString.split('&');
+
+    for (var i = 0; i < arr.length; i++) {
+      // separate the keys and the values
+      var a = arr[i].split('=');
+
+      // set parameter name and value (use 'true' if empty)
+      var paramName = a[0];
+      var paramValue = typeof (a[1]) === 'undefined' ? true : a[1];
+
+      // (optional) keep case consistent
+      paramName = paramName.toLowerCase();
+      if (typeof paramValue === 'string') paramValue = paramValue.toLowerCase();
+
+      // if the paramName ends with square brackets, e.g. colors[] or colors[2]
+      if (paramName.match(/\[(\d+)?\]$/)) {
+
+        // create key if it doesn't exist
+        var key = paramName.replace(/\[(\d+)?\]/, '');
+        if (!obj[key]) obj[key] = [];
+
+        // if it's an indexed array e.g. colors[2]
+        if (paramName.match(/\[\d+\]$/)) {
+          // get the index value and add the entry at the appropriate position
+          var index = /\[(\d+)\]/.exec(paramName)[1];
+          obj[key][index] = paramValue;
+        } else {
+          // otherwise add the value to the end of the array
+          obj[key].push(paramValue);
+        }
+      } else {
+        // we're dealing with a string
+        if (!obj[paramName]) {
+          // if it doesn't exist, create property
+          obj[paramName] = paramValue;
+        } else if (obj[paramName] && typeof obj[paramName] === 'string'){
+          // if property does exist and it's a string, convert it to an array
+          obj[paramName] = [obj[paramName]];
+          obj[paramName].push(paramValue);
+        } else {
+          // otherwise add the property
+          obj[paramName].push(paramValue);
+        }
+      }
+    }
+  }
+
+  return obj;
+}
 function icoRequest () {
     redirect_uri = 'https://your.app.url/authorize';
-    auth_request = http.request({
-        "url": "https://interop.ondilo.com/oauth2/authorize",
+    login = encodeURIComponent(request.parameters.username);
+    password = encodeURIComponent(request.parameters.password);
+    requestObj = {
+        "url": "https://interop.ondilo.com/oauth2/authorize?client_id=customer_api&response_type=code&scope=api&state=12345&redirect_uri="+encodeURIComponent(redirect_uri),
         "method": "POST",
         "headers": {
             "Accept": "application/json",
             "Accept-Charset": "UTF-8",
             "Accept-Encoding": "gzip-deflate",
             "Content-Type": "application/x-www-form-urlencoded"
-      },
-      "params": {
-          "client_id": 'customer_api',
-          "response_type": 'code',
-          redirect_uri,
-          "scope": 'api',
-          "state": '12345'
-        },
-        "bodyString": `login=${encodeURIComponent(request.parameters.username)}&password=${encodeURIComponent(request.parameters.password)}&locale=fr&proceed=Authorize`
+      	},
+        "bodyString": 'login='+login+'&password='+password+'&locale=fr&proceed=Authorize'
 
-    });
-    if (auth_request.status === 302) {
-        location = new URL(auth_request.headers.Location);
+    };
+    auth_request = http.request(requestObj);
+    if (auth_request.status == 302) {
+        location = auth_request.headers['Location'];
+        log.debug(location);
         if (location) {
-          code = location.searchParams.get('code');
+          code = getAllUrlParams(location).code;
+          log.debug(code);
           if (code) {
             token_request = http.request({
-              "url": "https://interop.ondilo.com/oauth2/authorize",
+              "url": "https://interop.ondilo.com/oauth2/token",
               "method": "POST",
               "headers": {
                   "Accept": "application/json",
@@ -43,20 +104,21 @@ function icoRequest () {
                   "Accept-Encoding": "gzip-deflate",
                   "Content-Type": "application/x-www-form-urlencoded"
               },
-              "bodyString": `code=${code}&grant_type=authorization_code&client_id=customer_api&redirect_uri=${encodeURIComponent(redirect_uri)}`
+              "bodyString": 'code='+code+'&grant_type=authorization_code&client_id=customer_api&redirect_uri='+encodeURIComponent(redirect_uri)
             });
-            if (token_request.status === 200) {
-              return http.request({
-                "url": `https://interop.ondilo.com/api/customer/v1/pools/${poolID}/lastmeasures`,
-                "params": {},
-                "headers": {"Authorization": "Bearer " + JSON.parse(token_request.body).access_token},
-            });
+            if (token_request.status == 200) {
+                access_token = JSON.parse(token_request.body).access_token;
+                log.debug(access_token);
+              	return http.request({
+                	"url": 'https://interop.ondilo.com/api/customer/v1/pools/'+poolID+'/lastmeasures',
+                	"params": {},
+                	"headers": {"Authorization": "Bearer " + access_token},
+            	});
             }
           }
         }
-        frames.push({"text": "Ondilo API oAuth2 error " + auth_request.status, "icon": defaultIcon});
-        return auth_request;
     }
+    return auth_request;
 }
 
 function addHiLowFrame(testValue, value, icon) {
@@ -70,9 +132,9 @@ function addHiLowFrame(testValue, value, icon) {
 if (! poolID) {
     frames.push({"text": "missing poolID", "icon": defaultIcon});
 } else {
-    var api = cache.getCache(icoRequest, "ico_" + serial, 1800, 300);
+    var api = cache.getCache(icoRequest, "ico_" + poolID, 1800, 300);
 	if (api.status != 200) {
-    	frames.push({"text": "Ondilo API returns error"  + api.status, "icon": defaultIcon});
+    	frames.push({"text": "Ondilo API returns error "  + api.status, "icon": defaultIcon});
 	} else {
         res = JSON.parse(api.body);
         if (res) {

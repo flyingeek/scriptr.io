@@ -132,7 +132,7 @@ function addHiLowFrame(testValue, value, icon) {
 if (! poolID) {
     frames.push({"text": "missing poolID", "icon": defaultIcon});
 } else {
-    var api = cache.getCache(icoRequest, "ico_" + poolID, 1800, 300);
+    var api = cache.getCache(icoRequest, "ico_" + poolID, 600, 300);
 	if (api.status != 200) {
     	frames.push({"text": "Ondilo API returns error "  + api.status, "icon": defaultIcon});
 	} else {
@@ -150,7 +150,7 @@ if (! poolID) {
             if (ph >  phMax) {
               addHiLowFrame(1, ph, "i10775");
             }
-            if (ph < phMin || ph > phMax) {
+            if (ph >= phMin || ph <= phMax) {
               frames.push({"text": ph.toFixed(1), "icon": "i10767"});
             }
             // if(res.Desinfectant.Message !== "Parfait" && res.Desinfectant.Message !== "Bon"){

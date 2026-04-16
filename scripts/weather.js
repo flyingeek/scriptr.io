@@ -78,7 +78,7 @@ var location = request.parameters.location || "45, -0.6";
 var locationArray = location.split(',');
 function meteo1Request() {
     resp = http.request({
-        "url": "https://rpcache-aa.meteofrance.com/internet2018client/2.0/nowcast/rain",
+        "url": "https://webservice.meteofrance.com/v3/rain",
         "params": {'lat': locationArray[0].trim(), 'lon': locationArray[1].trim(), 'token': request.parameters.mfkey, 'timestamp': (Date.now()).toString()}
     });
     log.debug('X-Cache-Status:' + resp.headers["X-Cache-Status"]);
